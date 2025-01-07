@@ -3,6 +3,8 @@ Welcome to this shitty repo !!!
 
 Basically this is a Custom Server built from nothing in JavaScript using Node.js
 
+## It's also unfinished, so stuff like sending data to the client hasn't been implemented yet.
+
 
 
 ## I will accept PR's and read issues and suggestions.
