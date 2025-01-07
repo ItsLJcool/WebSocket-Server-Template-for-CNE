@@ -41,7 +41,6 @@ class Room {
     }
     
     ping() {
-
         if (this.neverExpire) return;
         if (this.pingInterval != null) clearInterval(this.pingInterval);
         this.pingInterval = setInterval(() => {
@@ -107,6 +106,7 @@ function onMessage(ws, data) {
     switch (packet.name) {
         case "room.joinOrCreate":
             if (Room.usersCreatedRooms.has(ws.clientId)) {
+                // TODO: Send data back to client
                 console.log("User %s is on cooldown", ws.clientId);
                 return;
             }
@@ -122,11 +122,14 @@ function onMessage(ws, data) {
         case "room.join":
             var room = Room.getRoom(packet.data.name);
             if (!room) {
+                // TODO: Send data back to client
                 console.log("Room %s does not exist", packet.data.name);
                 return;
             }
     
             room.addUser(ws.clientId, {discord: packet.__discord || {}});
+            
+            // TODO: Send data back to client
             console.log("User %s has joined room %s", ws.clientId, room.name);
             break;
         case "room.leave":
@@ -135,10 +138,13 @@ function onMessage(ws, data) {
     
             room.removeUser(ws.clientId);
             if (room.users.length == 0) room.removeFromRooms();
+
+            // TODO: Send data back to client
             console.log("User %s has left room %s", ws.clientId, room.name);
             break;
     }
 
+    // TODO: Send data back to client
     console.log("\nRooms: %s", Room.rooms);
 }
 
