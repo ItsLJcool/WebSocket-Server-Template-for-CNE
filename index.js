@@ -3,16 +3,19 @@ const { v4: uuidv4 } = require('uuid');
 
 const { Room } = require('./endpoints/Rooms');
 
+const WebSocket = require('ws');
+
+
+
 const Debugger = true;
 
 const fs = require('fs');
 const path = require('path');
 
-// Install the `ws` package with `npm install ws`
-const WebSocket = require('ws');
 
 // Create a WebSocket server
 const wss = new WebSocket.Server({ port: 5000 });
+global.webSocketServer = wss;
 
 console.log("WebSocket server is running on ws://localhost:5000");
 

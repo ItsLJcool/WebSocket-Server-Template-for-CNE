@@ -107,7 +107,28 @@ You can of disable rooms from expiring by setting `neverExpire` to `true` when c
 var room = new Room("My Room", {}, false, true);
 ```
 You can change the default `userCreationTimeOut`, `roomTimeoutTime` and `pingTimeOut` in the class currently.
-<br>Probably should make it a congfig file.
+<br>Probably should make it a congfig file. Remind me please.
+
+### Sending Data to clients
+It wouldn't be a room system if you couldn't send data to clients!<br>
+All you need to do is have the packet you want to send to the user(s) and the client UUID(s) you want to send it to.
+#### `sendPacketToAll(data, disregards = [])`
+#### `sendPacketToUser(data, clientId)`
+These functions will send the packet to all users in the room or a specific user in the room.<br>
+`disregards` basically allow you to disregard clients to send packets too.<br>
+Here is an example of how to use it.
+```js
+const { Room } = require('./endpoints/Rooms');
+
+var room = new Room("My Room");
+
+// Send to everyone in a room a warm welcome message
+Room.rooms.forEach(room => {
+    room.sendPacketToAll("Hello World!");
+});
+
+room.sendPacketToUser("Your a special one!", "Client UUID");
+```
 
 </details>
 

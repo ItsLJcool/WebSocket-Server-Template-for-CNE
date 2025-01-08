@@ -1,5 +1,11 @@
 const { PacketParser } = require('../utils/WebSockerPacket Parser');
+const WebSocket = require('ws');
 
+/**
+ * @class Room
+ * @author ItsLJcool
+ * @description A class that holds data for rooms. Clients can connect, create, join, or leave rooms.
+ */
 class Room {
 
     // Time in seconds to wait for a room to be empty before it is removed.
@@ -48,14 +54,14 @@ class Room {
         }, this.pingTimeOut * 1000);
     }
 
-    addUser(clientID, extra) {
-        if (this.users.find(user => user.clientID == clientID)) return;
+    addUser(clientId, extra) {
+        if (this.users.find(user => user.clientId == clientId)) return;
 
         // Chekcing if user is already in room, if so we don't add them to the new room.
         var isUserInRoom = false;
         Room.rooms.forEach(room => {
             for (const user of room.users) {
-                if (user.clientID != clientID) continue;
+                if (user.clientId != clientId) continue;
 
                 isUserInRoom = true;
                 break;
@@ -64,15 +70,15 @@ class Room {
         if (isUserInRoom) return;
         
         var data = {
-            clientID: clientID,
+            clientId: clientId,
             __meta__: extra || {},
         };
 
         this.users.push(data);
     }
 
-    removeUser(clientID) {
-        this.users = this.users.filter(user => user.clientID != clientID); // supermaven is peak with this code it generated
+    removeUser(clientId) {
+        this.users = this.users.filter(user => user.clientId != clientId); // supermaven is peak with this code it generated
     }
 
     addToRooms() {
@@ -94,9 +100,44 @@ class Room {
         if (this.neverExpire) return;
         clearInterval(this.roomTimeout);
     }
+
+    /**
+     * @param {*} data The packet data to send to all users in the room
+     * @param {*} disregards Put any client UUID's to disregard from sending the packet to the client(s)
+     */
+    sendPacketToAll(data, disregards = []) {
+        var clientsWs = this.__getUsersWebSockets();
+        clientsWs = clientsWs.filter(client => !disregards.includes(client.clientId));
+        if (clientsWs.length == 0) return;
+        for (const client in clientsWs) clientsWs[client].send(data);
+    }
+
+    /**
+     * @param {*} data The packet data to send to a specific user in the room
+     * @param {*} clientId The client UUID of the user to send the packet to
+     */
+    sendPacketToUser(data, clientId) {
+        var clientsWs = this.__getUsersWebSockets();
+        clientsWs = clientsWs.filter(client => client.clientId != clientId);
+        if (clientsWs.length == 0) return;
+        for (const client in clientsWs) clientsWs[client].send(data);
+    }
+
+    __getUsersWebSockets() {
+        var clientWs = [];
+        webSocketServer.clients.forEach((ws) => {
+            for (const id in this.users) {
+                const user = this.users[id];
+                if (user.clientId != ws.clientId) continue;
+                if (ws.readyState !== WebSocket.OPEN) continue;
+                clientWs.push(ws);
+            }
+        });
+        return clientWs;
+    }
 }
 
-function onClientDisconnected() {
+function onClientDisconnected(ws) {
     Room.rooms.forEach(room => { room.removeUser(ws.clientId); });
 }
 
@@ -112,7 +153,8 @@ function onMessage(ws, data) {
             }
             var metadata = packet.data.roomData || {};
     
-            new Room(packet.data.name || 'Room #'+(Room.rooms.size+1), metadata).addUser(ws.clientId, {discord: packet.__discord || {}});
+            var room = new Room(packet.data.name || 'Room #'+(Room.rooms.size+1), metadata);
+            room.addUser(ws.clientId, {discord: packet.__discord || {}});
     
             const _cooldown = setTimeout(() => {
                 Room.usersCreatedRooms.delete(ws.clientId);
