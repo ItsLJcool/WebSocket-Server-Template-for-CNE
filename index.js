@@ -1,4 +1,4 @@
-const { Unserializer } = require('./utils/Unserializer');
+const { Unserializer } = require('./utils/HaxeSerialization');
 const { v4: uuidv4 } = require('uuid');
 
 const { Room } = require('./endpoints/Rooms');

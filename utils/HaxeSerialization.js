@@ -699,5 +699,86 @@ function preview(data) {
 	}
 	return data;
 }
+class Serializer {
+    constructor() {
+        this.buf = [];
+        this.cache = [];
+        this.scache = [];
+    }
 
-module.exports = { Unserializer, EnumInfo, ClassData, ExceptionData, BytesData, ObjectMap, IntMap, StringMap, List };
+    static BASE64 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789%:";
+
+    serialize(value) {
+        switch (typeof value) {
+            case "object":
+                if (value === null) {
+                    this.buf.push("n");
+                } else if (Array.isArray(value)) {
+                    if (this.cache.includes(value)) {
+                        this.buf.push("r", this.cache.indexOf(value));
+                    } else {
+                        this.cache.push(value);
+                        this.buf.push("a");
+                        value.forEach((item) => this.serialize(item));
+                        this.buf.push("h");
+                    }
+                } else if (value instanceof Date) {
+                    this.buf.push("v", value.getTime());
+                } else if (value instanceof Map) {
+                    this.buf.push("b");
+                    this.cache.push(value);
+                    for (const [key, val] of value.entries()) {
+                        this.serialize(key);
+                        this.serialize(val);
+                    }
+                    this.buf.push("h");
+                } else {
+                    if (this.cache.includes(value)) {
+                        this.buf.push("r", this.cache.indexOf(value));
+                    } else {
+                        this.cache.push(value);
+                        this.buf.push("o");
+                        for (const key in value) {
+                            this.serialize(key);
+                            this.serialize(value[key]);
+                        }
+                        this.buf.push("g");
+                    }
+                }
+                break;
+
+            case "boolean":
+                this.buf.push(value ? "t" : "f");
+                break;
+
+            case "number":
+                if (Number.isInteger(value)) {
+                    this.buf.push("i", value);
+                } else {
+                    this.buf.push("d", value);
+                }
+                break;
+
+            case "string":
+                const index = this.scache.indexOf(value);
+                if (index >= 0) {
+                    this.buf.push("R", index);
+                } else {
+                    this.scache.push(value);
+                    const encoded = encodeURIComponent(value).replace(/%20/g, "+");
+                    this.buf.push("y", value.length, ":", encoded);
+                }
+                break;
+
+            default:
+                throw new Error(`Unsupported value type: ${typeof value}`);
+        }
+    }
+
+    toString() {
+        return this.buf.join("");
+    }
+}
+
+
+module.exports = { Unserializer, Serializer, EnumInfo, ClassData, ExceptionData, BytesData, ObjectMap, IntMap, StringMap, List };

@@ -1,4 +1,4 @@
-const { Unserializer } = require('../utils/Unserializer');
+const { Unserializer, Serializer } = require('./HaxeSerialization');
 
 class PacketParser {
 	constructor(ws, packet) {
@@ -20,4 +20,37 @@ class PacketParser {
     }
 }
 
-module.exports = { PacketParser };
+class Packet {
+    constructor(name = null, data = {}, add_meta_data = true) {
+        this.name = name;
+        this.data = data;
+        this.add_meta_data = add_meta_data;
+    }
+
+    exists(key) {
+        return this.data.hasOwnProperty(key);
+    }
+
+    set(key, value) {
+        this.data[key] = value;
+        return this;
+    }
+    
+    get(key) {
+        return this.data[key];
+    }
+
+    toString() {
+        if (this.add_meta_data) this.data.__timestamp = Date.now();
+        var hasName = (this.name != null && this.name.trim() != "");
+        var start = (hasName) ? "!JSP"+this.name : "!JSp";
+        start += "=>";
+
+        var cerial = new Serializer();
+        cerial.serialize(this.data);
+
+        return start+cerial.toString();
+    }
+}
+
+module.exports = { PacketParser, Packet };

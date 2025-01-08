@@ -1,4 +1,4 @@
-const { PacketParser } = require('../utils/WebSockerPacket Parser');
+const { PacketParser, Packet } = require('../utils/WebSockerPacket Parser');
 const WebSocket = require('ws');
 
 /**
@@ -50,6 +50,7 @@ class Room {
         if (this.neverExpire) return;
         if (this.pingInterval != null) clearInterval(this.pingInterval);
         this.pingInterval = setInterval(() => {
+            this.sendPacketToAll(new Packet("room.event", {room: this.name, event: "timout"}).toString());
             this.removeFromRooms();
         }, this.pingTimeOut * 1000);
     }
@@ -74,6 +75,8 @@ class Room {
             __meta__: extra || {},
         };
 
+        this.host = clientId;
+
         this.users.push(data);
     }
 
@@ -94,7 +97,6 @@ class Room {
 
     removeFromRooms() {
         if (!Room.rooms.has(this.name)) return;
-
         Room.rooms.delete(this.name);
 
         if (this.neverExpire) return;
@@ -146,11 +148,7 @@ function onMessage(ws, data) {
 
     switch (packet.name) {
         case "room.joinOrCreate":
-            if (Room.usersCreatedRooms.has(ws.clientId)) {
-                // TODO: Send data back to client
-                console.log("User %s is on cooldown", ws.clientId);
-                return;
-            }
+            if (Room.usersCreatedRooms.has(ws.clientId)) return ws.send(new Packet("room.cooldown").toString());
             var metadata = packet.data.roomData || {};
     
             var room = new Room(packet.data.name || 'Room #'+(Room.rooms.size+1), metadata);
@@ -160,29 +158,40 @@ function onMessage(ws, data) {
                 Room.usersCreatedRooms.delete(ws.clientId);
             }, Room.userCreationTimeOut * 1000);
             Room.usersCreatedRooms.set(ws.clientId, _cooldown);
+            
+            ws.send(new Packet("room.join", {room: room.name, event: "join"}).toString());
             break;
         case "room.join":
             var room = Room.getRoom(packet.data.name);
-            if (!room) {
-                // TODO: Send data back to client
-                console.log("Room %s does not exist", packet.data.name);
-                return;
-            }
+            if (!room) return ws.send(new Packet("room.error", {error: "Room does not exist"}).toString());
     
+            room.sendPacketToAll(new Packet("room.event", {room: room.name, event: "join", user: ws.clientId}).toString());
+            ws.send(new Packet("room.event", {room: room.name, event: "join"}).toString());
+
             room.addUser(ws.clientId, {discord: packet.__discord || {}});
             
-            // TODO: Send data back to client
             console.log("User %s has joined room %s", ws.clientId, room.name);
             break;
         case "room.leave":
             var room = Room.getRoom(packet.data.name);
-            if (!room) return;
+            if (!room) return ws.send(new Packet("room.error", {error: "Room does not exist"}).toString());
     
             room.removeUser(ws.clientId);
             if (room.users.length == 0) room.removeFromRooms();
 
-            // TODO: Send data back to client
+            room.sendPacketToAll(new Packet("room.event", {room: room.name, event: "leave", user: ws.clientId}).toString());
+            ws.send(new Packet("room.event", {room: room.name, event: "leave"}).toString());
+
             console.log("User %s has left room %s", ws.clientId, room.name);
+            break;
+        case "room.ping":
+            var room = Room.getRoom(packet.data.name);
+            if (!room || room.host != ws.clientId) {
+                var error = (room.host != ws.clientId) ? "You are not the host of this room" : "Room does not exist";
+                return ws.send(new Packet("room.error", {error: error}).toString());
+            }
+            room.ping();
+            room.sendPacketToAll(new Packet("room.event", {room: room.name, event: "ping", user: ws.clientId}).toString());
             break;
     }
 
