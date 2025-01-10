@@ -3,7 +3,6 @@ const { v4: uuidv4 } = require('uuid');
 const WebSocket = require('ws');
 
 
-
 const Debugger = true;
 
 const fs = require('fs');
@@ -59,7 +58,11 @@ function debug_connection(ws) { console.log("Client connected: %s", ws.clientId)
 function debug_close(ws) { console.log("Client disconnected: %s", ws.clientId); }
 
 function shutdownServer() {
-    console.log('Shutting down server...');
+    console.log('\nShutting down server...');
+
+    process.stdin.setRawMode(false); // Exit raw mode
+    // process.stdout.write('\x1B[?25h'); // Show cursor
+
     wss.clients.forEach((client) => {
         client.close();
     });
@@ -74,3 +77,6 @@ function shutdownServer() {
 // Listen for termination signals (e.g., Ctrl+C)
 process.on('SIGINT', shutdownServer);
 process.on('SIGTERM', shutdownServer);
+
+const { ServerTerminal } = require('./utils/ServerTerminal');
+ServerTerminal.onShutdown = shutdownServer;
