@@ -80,3 +80,4 @@ process.on('SIGTERM', shutdownServer);
 
 const { ServerTerminal } = require('./utils/ServerTerminal');
 ServerTerminal.onShutdown = shutdownServer;
+// ServerTerminal.preventConsoleLog = true;

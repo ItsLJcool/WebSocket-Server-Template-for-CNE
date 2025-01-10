@@ -12,6 +12,7 @@ function listCommands() {
 }
 
 class ServerTerminal {
+    static preventConsoleLog = false;
     static onShutdown = () => {
         rl.close();
         process.exit(0);
@@ -44,6 +45,7 @@ const rl = readline.createInterface({
 
 const originalLog = console.log;
 console.log = function (...args) {
+    if (ServerTerminal.preventConsoleLog) return;
     rl.output.write('\x1B[2K\r'); // Clear the current line
     originalLog.apply(console, args); // Call the original console.log
     rl.prompt(true); // Re-render the prompt
