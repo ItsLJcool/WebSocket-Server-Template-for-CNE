@@ -185,17 +185,14 @@ function onMessage(ws, data) {
             console.log("User %s has left room %s", ws.clientId, room.name);
             break;
         case "room.ping":
-            var room = Room.getRoom(packet.data.name);
-            if (!room || room.host != ws.clientId) {
-                var error = (room.host != ws.clientId) ? "You are not the host of this room" : "Room does not exist";
-                return ws.send(new Packet("room.error", {error: error}).toString());
-            }
+            var room = Room.getRoom(packet.data.room);
+            if (!room) return ws.send(new Packet("room.error", {error: "Room does not exist"}).toString());
+            if (room.host != ws.clientId) return ws.send(new Packet("room.error", {error: "You are not the host of this room"}).toString());
             room.ping();
             room.sendPacketToAll(new Packet("room.event", {room: room.name, event: "ping", user: ws.clientId}).toString());
             break;
     }
 
-    // TODO: Send data back to client
     console.log("\nRooms: %s", Room.rooms);
 }
 

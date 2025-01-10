@@ -1,4 +1,5 @@
-const { Unserializer, Serializer } = require('./HaxeSerialization');
+const { Unserializer } = require('./HaxeSerialization');
+var Serializer = require("haxe-serializer")
 
 class PacketParser {
 	constructor(ws, packet) {
@@ -46,8 +47,7 @@ class Packet {
         var start = (hasName) ? "!JSP"+this.name : "!JSp";
         start += "=>";
 
-        var cerial = new Serializer();
-        cerial.serialize(this.data);
+        let cerial = Serializer.serialize(this.data);
 
         return start+cerial.toString();
     }
