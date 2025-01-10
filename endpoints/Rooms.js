@@ -124,6 +124,12 @@ class Room {
         if (clientsWs.length == 0) return;
         for (const client in clientsWs) clientsWs[client].send(data);
     }
+    
+    static sendGlobalPacket(data) {
+        Room.rooms.forEach(room => {
+            room.sendPacketToAll(data);
+        });
+    }
 
     __getUsersWebSockets() {
         var clientWs = [];

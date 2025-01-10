@@ -8,9 +8,7 @@ Basically this is a Custom Server built from nothing in JavaScript using Node.js
 
 
 ## I will accept PR's and read issues and suggestions.
-Since The `WebSocketUtil`'s PR hasn't been merged yet I welcome suggestions on how to improve this template.
-
-
+Since The `WebSocketUtil`'s PR hasn't been merged yet on **Codename Engine**, I welcome suggestions on how to improve this template.
 
 ## Basic Usage
 Anything in the `endpoints` the WebSocket will send data to.
@@ -123,14 +121,27 @@ const { Room } = require('./endpoints/Rooms');
 var room = new Room("My Room");
 
 // Send to everyone in a room a warm welcome message
-Room.rooms.forEach(room => {
-    room.sendPacketToAll("Hello World!");
-});
+Room.sendGlobalPacket("Hello World!");
 
 room.sendPacketToUser("Your a special one!", "Client UUID");
 ```
-
 </details>
 
-### Todo: Add tutorial on how to compile
-lazy to do it rn
+# How to compile
+Currently, you need to install `Node.js v10.5.0`<br>
+To check your version or if you have Node.js installed, run `npm -v` in your powershell.
+
+Once you have download the template, run these in your powershell:
+```bat
+npm install fs
+npm install path
+npm install ws
+npm install uuid
+npm install haxe-serializer
+```
+then just run `node .` in the directory of `index.js` and your server should start!
+
+This is just windows tutorial but its pretty much the same for linux and mac but using `sh` instaed of `bat` syntax.
+
+## Server Settings
+Working on making a `server-config.json` so you can just edit data in there and reference it with a util for easy implementations of server settings.
