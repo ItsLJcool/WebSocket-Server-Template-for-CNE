@@ -151,15 +151,21 @@ function onMessage(ws, data) {
             if (Room.usersCreatedRooms.has(ws.clientId)) return ws.send(new Packet("room.cooldown").toString());
             var metadata = packet.data.roomData || {};
     
-            var room = new Room(packet.data.name || 'Room #'+(Room.rooms.size+1), metadata);
+            var roomName = packet.data.name || 'Room #'+(Room.rooms.size+1);
+            if (packet.data.__discord != null) roomName = packet.data.__discord.globalName + "'s Room";
+            var room = new Room(roomName, metadata);
             room.addUser(ws.clientId, {discord: packet.__discord || {}});
+            var host = (room.host == ws.clientId);
     
             const _cooldown = setTimeout(() => {
                 Room.usersCreatedRooms.delete(ws.clientId);
             }, Room.userCreationTimeOut * 1000);
             Room.usersCreatedRooms.set(ws.clientId, _cooldown);
             
-            ws.send(new Packet("room.join", {room: room.name, event: "join"}).toString());
+            var data = {room: room.name, event: "join"};
+            if (host) data.pingTimeout = room.pingTimeOut;
+
+            ws.send(new Packet("room.join", data).toString());
             break;
         case "room.join":
             var room = Room.getRoom(packet.data.name);
