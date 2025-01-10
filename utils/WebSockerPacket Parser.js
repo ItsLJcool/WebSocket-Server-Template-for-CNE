@@ -1,4 +1,4 @@
-const { Unserializer } = require('./HaxeSerialization');
+const { Unserializer } = require('./Unserializer');
 var Serializer = require("haxe-serializer")
 
 class PacketParser {
