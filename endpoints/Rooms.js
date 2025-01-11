@@ -4,7 +4,6 @@ const WebSocket = require('ws');
 const { ServerSettings } = require('../utils/ServerSettings');
 
 /**
- * @class Room
  * @author ItsLJcool
  * @description A class that holds data for rooms. Clients can connect, create, join, or leave rooms.
  */
