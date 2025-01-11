@@ -1,9 +1,9 @@
 {
   "serverHost": "localhost",
   "serverPort": 5000,
-  "enableServerConsole": true,
+  "enableServerConsole": false,
   "noConsoleLog": false,
   "roomTimeoutTime": 10,
-  "roomPingTimeOut": 60,
+  "roomPingTimeOut": 0,
   "userCreationTimeOut": 20
 }

@@ -160,11 +160,13 @@ function onMessage(ws, data) {
 
     switch (packet.name) {
         case "room.joinOrCreate":
-            // if (Room.usersCreatedRooms.has(ws.clientId)) return ws.send(new Packet("room.cooldown").toString());
+            
+            if (Room.usersCreatedRooms.has(ws.clientId)) return ws.send(new Packet("room.cooldown").toString());
             var metadata = packet.data.roomData || {};
     
             var roomName = packet.data.name || 'Room #'+(Room.rooms.size+1);
             if (packet.data.__discord != null) roomName = packet.data.__discord.globalName + "'s Room";
+            
             var room = new Room(roomName, metadata);
             room.addUser(ws.clientId);
             var host = (room.host == ws.clientId);
@@ -188,7 +190,7 @@ function onMessage(ws, data) {
 
             room.addUser(ws.clientId);
             
-            console.log("User %s has joined room %s", ws.clientId, room.name);
+            console.log("\nUser %s has joined room %s", ws.clientId, room.name);
             break;
         case "room.leave":
             var room = Room.getRoom(packet.data.name);
