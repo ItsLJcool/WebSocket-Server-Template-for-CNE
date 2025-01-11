@@ -52,7 +52,7 @@ class Room {
         if (this.neverExpire) return;
         if (this.pingInterval != null) clearInterval(this.pingInterval);
         this.pingInterval = setInterval(() => {
-            this.sendPacketToAll(new Packet("room.event", {room: this.name, event: "timout"}).toString());
+            this.sendPacketToAll(new Packet("room.timeout", { room: this.name }).toString());
             this.removeFromRooms();
             clearInterval(this.pingInterval);
         }, this.pingTimeOut * 1000);
@@ -160,13 +160,13 @@ function onMessage(ws, data) {
 
     switch (packet.name) {
         case "room.joinOrCreate":
-            if (Room.usersCreatedRooms.has(ws.clientId)) return ws.send(new Packet("room.cooldown").toString());
+            // if (Room.usersCreatedRooms.has(ws.clientId)) return ws.send(new Packet("room.cooldown").toString());
             var metadata = packet.data.roomData || {};
     
             var roomName = packet.data.name || 'Room #'+(Room.rooms.size+1);
             if (packet.data.__discord != null) roomName = packet.data.__discord.globalName + "'s Room";
             var room = new Room(roomName, metadata);
-            room.addUser(ws.clientId, {discord: packet.__discord || {}});
+            room.addUser(ws.clientId);
             var host = (room.host == ws.clientId);
     
             const _cooldown = setTimeout(() => {
@@ -174,19 +174,19 @@ function onMessage(ws, data) {
             }, Room.userCreationTimeOut * 1000);
             Room.usersCreatedRooms.set(ws.clientId, _cooldown);
             
-            var data = {room: room.name, event: "join"};
+            var data = {room: room.name, users: room.users};
             if (host) data.pingTimeout = room.pingTimeOut;
 
-            ws.send(new Packet("room.join", data).toString());
+            ws.send(new Packet("room.create", data).toString());
             break;
         case "room.join":
             var room = Room.getRoom(packet.data.name);
             if (!room) return ws.send(new Packet("room.error", {error: "Room does not exist"}).toString());
     
-            room.sendPacketToAll(new Packet("room.event", {room: room.name, event: "join", user: ws.clientId}).toString());
-            ws.send(new Packet("room.event", {room: room.name, event: "join"}).toString());
+            room.sendPacketToAll(new Packet("room.join", {room: room.name, user: ws.clientId}).toString());
+            ws.send(new Packet("room.join", {room: room.name}).toString());
 
-            room.addUser(ws.clientId, {discord: packet.__discord || {}});
+            room.addUser(ws.clientId);
             
             console.log("User %s has joined room %s", ws.clientId, room.name);
             break;
@@ -195,10 +195,11 @@ function onMessage(ws, data) {
             if (!room) return ws.send(new Packet("room.error", {error: "Room does not exist"}).toString());
     
             room.removeUser(ws.clientId);
+            if (room.host == ws.clientId) room.host = room.users[0].clientId;
             if (room.users.length == 0) room.removeFromRooms();
 
-            room.sendPacketToAll(new Packet("room.event", {room: room.name, event: "leave", user: ws.clientId}).toString());
-            ws.send(new Packet("room.event", {room: room.name, event: "leave"}).toString());
+            room.sendPacketToAll(new Packet("room.leave", {room: room.name, host: room.host, user: ws.clientId}).toString());
+            ws.send(new Packet("room.leave", {room: room.name}).toString());
 
             console.log("User %s has left room %s", ws.clientId, room.name);
             break;
@@ -207,11 +208,22 @@ function onMessage(ws, data) {
             if (!room) return ws.send(new Packet("room.error", {error: "Room does not exist"}).toString());
             if (room.host != ws.clientId) return ws.send(new Packet("room.error", {error: "You are not the host of this room"}).toString());
             room.ping();
-            room.sendPacketToAll(new Packet("room.event", {room: room.name, event: "ping", user: ws.clientId}).toString());
+            room.sendPacketToAll(new Packet("room.ping", {room: room.name, pingTimeOut: room.pingTimeOut, user: ws.clientId}).toString());
+            break;
+        case "room.getRooms":
+            var rooms = [];
+            Room.rooms.forEach(room => {
+                var data = {
+                    name: room.name,
+                    users: room.users,
+                    host: room.host,
+                    pingTimeout: room.pingTimeOut,
+                };
+                rooms.push(data);
+            });
+            ws.send(new Packet("room.getRooms", {rooms: rooms}).toString());
             break;
     }
-
-    console.log("\nRooms: %s", Room.rooms);
 }
 
 module.exports = {

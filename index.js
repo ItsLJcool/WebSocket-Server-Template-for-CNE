@@ -1,5 +1,3 @@
-const { v4: uuidv4 } = require('uuid');
-
 const { ServerSettings } = require('./utils/ServerSettings');
 
 const WebSocket = require('ws');
@@ -33,9 +31,6 @@ global.webSocketServer = wss;
 const endpoints = path.join(__dirname, 'endpoints');
 const endpointFiles = fs.readdirSync(endpoints).filter(file => file.endsWith('.js'));
 wss.on("connection", function (ws) {
-    ws.clientId = uuidv4();
-    
-    if (Debugger) debug_connection(ws, ...arguments);
 
     for (const file of endpointFiles) {
         const filePath = path.join(endpoints, file);
@@ -45,7 +40,6 @@ wss.on("connection", function (ws) {
         for (const field of fieldsToCheck) {
             if (!(field in endpoint)) continue;
             ws.on(field, function() {
-                if (Debugger) debug_message(ws, ...arguments);
                 try {
                     endpoint[field](ws, ...arguments);
                 } catch (e) {
@@ -63,7 +57,11 @@ wss.on("connection", function (ws) {
         }
     }
 
-    if (Debugger) ws.on('close', () => { debug_close(...arguments); });
+    if (Debugger) {
+        // ws.on('message', (data) => { debug_message(ws, data); });
+        debug_connection(ws, ...arguments);
+        ws.on('close', () => { debug_close(...arguments); });
+    }
     
     ws.on('error', console.error);
 });
