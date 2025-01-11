@@ -1,5 +1,7 @@
 const { v4: uuidv4 } = require('uuid');
 
+const { ServerSettings } = require('./utils/ServerSettings');
+
 const WebSocket = require('ws');
 
 
@@ -8,12 +10,22 @@ const Debugger = true;
 const fs = require('fs');
 const path = require('path');
 
+// Define the host and port
+const host = ServerSettings.serverHost;
+const port = ServerSettings.serverPort;
 
 // Create a WebSocket server
-const wss = new WebSocket.Server({ port: 5000 });
-global.webSocketServer = wss;
+const wss = new WebSocket.Server({ host: host, port: port }, () => {
+    console.log("");
+    if (host === 'localhost' || host === '127.0.0.1')
+        console.log(`Server is running on localhost at ws://${host}:${port}`);
+    else
+        console.log(`Server is running on ${host} at ws://${host}:${port}`);
 
-console.log("WebSocket server is running on ws://localhost:5000");
+    const { ServerTerminal } = require('./utils/ServerTerminal');
+    ServerTerminal.onShutdown = shutdownServer;
+});
+global.webSocketServer = wss;
 
 const endpoints = path.join(__dirname, 'endpoints');
 const endpointFiles = fs.readdirSync(endpoints).filter(file => file.endsWith('.js'));
@@ -60,9 +72,6 @@ function debug_close(ws) { console.log("Client disconnected: %s", ws.clientId); 
 function shutdownServer() {
     console.log('\nShutting down server...');
 
-    process.stdin.setRawMode(false); // Exit raw mode
-    // process.stdout.write('\x1B[?25h'); // Show cursor
-
     wss.clients.forEach((client) => {
         client.close();
     });
@@ -77,7 +86,3 @@ function shutdownServer() {
 // Listen for termination signals (e.g., Ctrl+C)
 process.on('SIGINT', shutdownServer);
 process.on('SIGTERM', shutdownServer);
-
-const { ServerTerminal } = require('./utils/ServerTerminal');
-ServerTerminal.onShutdown = shutdownServer;
-// ServerTerminal.preventConsoleLog = true;

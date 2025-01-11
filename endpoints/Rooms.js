@@ -1,6 +1,8 @@
 const { PacketParser, Packet } = require('../utils/WebSockerPacket Parser');
 const WebSocket = require('ws');
 
+const { ServerSettings } = require('../utils/ServerSettings');
+
 /**
  * @class Room
  * @author ItsLJcool
@@ -9,10 +11,10 @@ const WebSocket = require('ws');
 class Room {
 
     // Time in seconds to wait for a room to be empty before it is removed.
-    static roomTimeoutTime = 10;
-    static pingTimeOut = 60;
+    static roomTimeoutTime = ServerSettings.roomTimeoutTime;
+    static pingTimeOut = ServerSettings.pingTimeOut;
 
-    static userCreationTimeOut = 20;
+    static userCreationTimeOut = ServerSettings.userCreationTimeOut;
     static usersCreatedRooms = new Map();
 
     static rooms = new Map();

@@ -1,6 +1,8 @@
 // Basic terminal interface from ChatGPT. Thanks man.
 // Refactored to be more modular and easier to use.
 
+const { ServerSettings } = require('./ServerSettings');
+
 const { Room } = require('../endpoints/Rooms');
 const WebSocket = require('ws');
 
@@ -12,7 +14,7 @@ function listCommands() {
 }
 
 class ServerTerminal {
-    static preventConsoleLog = false;
+    static preventConsoleLog = ServerSettings.noConsoleLog;
     static onShutdown = () => {
         rl.close();
         process.exit(0);
@@ -34,39 +36,51 @@ class ServerTerminal {
 
         exit: ServerTerminal.onShutdown,
     };
+
+    static serverConsole = ServerSettings.enableServerConsole;
 }
 
 // Set up the readline interface
-const rl = readline.createInterface({
-    input: process.stdin,
-    output: process.stdout,
-    prompt: '>>> ',
-});
+var rl = null;
 
 const originalLog = console.log;
 console.log = function (...args) {
     if (ServerTerminal.preventConsoleLog) return;
-    rl.output.write('\x1B[2K\r'); // Clear the current line
-    originalLog.apply(console, args); // Call the original console.log
-    rl.prompt(true); // Re-render the prompt
+    if (ServerTerminal.serverConsole) rl.output.write('\x1B[2K\r');
+
+    originalLog.apply(console, args);
+
+    if (ServerTerminal.serverConsole) rl.prompt(true);
 };
 
-rl.on('line', (line) => {
-    const input = line.trim();
-    console.log('');
-    if (ServerTerminal.commands[input]) ServerTerminal.commands[input]();
-    else {
-        console.log(`Unknown command: ${input}`);
-        console.log('Type "help" for a list of available commands.');
-    }
-    rl.prompt();
-}).on('close', () => {
-    ServerTerminal.onShutdown();
-});
+function setupServerTerminal() {
+    rl = readline.createInterface({
+        input: process.stdin,
+        output: process.stdout,
+        prompt: '>>> ',
+    });
 
-// Start the terminal
-console.log('\nServer Terminal Active!');
-console.log('Type "help" for a list of available commands.');
-rl.prompt();
+    rl.on('line', (line) => {
+        const input = line.trim();
+        console.log('');
+        if (ServerTerminal.commands[input]) ServerTerminal.commands[input]();
+        else {
+            console.log(`Unknown command: ${input}`);
+            console.log('Type "help" for a list of available commands.');
+        }
+        console.log('');
+        rl.prompt();
+    }).on('close', () => {
+        ServerTerminal.onShutdown();
+    });
+    
+    // Start the terminal
+    console.log('\nServer Terminal Active!');
+    console.log('Type "help" for a list of available commands.');
+    rl.prompt();
+}
+
+
+if (ServerTerminal.serverConsole) setupServerTerminal();
 
 module.exports = { ServerTerminal };

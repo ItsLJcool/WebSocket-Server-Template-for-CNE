@@ -144,4 +144,12 @@ then just run `node .` in the directory of `index.js` and your server should sta
 This is just windows tutorial but its pretty much the same for linux and mac but using `sh` instaed of `bat` syntax.
 
 ## Server Settings
-Working on making a `server-config.json` so you can just edit data in there and reference it with a util for easy implementations of server settings.
+You can edit the `ServerSettings.js` file in `utils` to change default settings for the server.
+
+The `server-config.json` is more of a save file for the settings, you want to edit the `ServerSettings.js` file for making new settings.<br>
+Then you edit the`server-config.json` file to change the settings.
+
+The `ServerSettings.js` just initalizes the `server-config.json` file and sets default values for the settings. `server-config.json` acutally holds the save data.
+
+## Other information
+Check out the [**ws documentation**](https://github.com/websockets/ws) for more information on how to use WebSockets.
