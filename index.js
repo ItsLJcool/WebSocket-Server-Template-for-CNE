@@ -14,8 +14,11 @@ const path = require('path');
 const host = ServerSettings.serverHost;
 const port = ServerSettings.serverPort;
 
+var _serverinput = {port: port};
+if (host !== 'localhost' && host !== '127.0.0.1') _serverinput.host = host;
+
 // Create a WebSocket server
-const wss = new WebSocket.Server({ host: host, port: port }, () => {
+const wss = new WebSocket.Server(_serverinput, () => {
     console.log("");
     if (host === 'localhost' || host === '127.0.0.1')
         console.log(`Server is running on localhost at ws://${host}:${port}`);
