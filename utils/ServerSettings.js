@@ -40,7 +40,7 @@ class ServerSettings {
           console.error('Error parsing existing JSON file:', err);
         }
       }
-  
+
       // Merge the existing JSON with the current JSON, keeping existing keys
       const mergedJson = { ...currentJson, ...existingJson };
 
@@ -55,7 +55,7 @@ class ServerSettings {
         const fileContents = fs.readFileSync(filePath, 'utf8');
         try {
           const savedData = JSON.parse(fileContents);
-  
+
           
           for (const [key, value] of Object.entries(savedData)) {
             if (!(key in this)) continue;
@@ -69,5 +69,6 @@ class ServerSettings {
       }
     }
 }
+
 ServerSettings.save();
 module.exports = { ServerSettings };

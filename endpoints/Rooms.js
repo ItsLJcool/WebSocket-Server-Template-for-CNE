@@ -38,12 +38,13 @@ class Room {
         if (Room.rooms.has(name)) return Room.rooms.get(name);
 
         this.users = [];
-        this.__meta__ = extras;
+        this.__meta__ = extras || {};
         if (addToRooms) this.addToRooms();
 
         this.pingTimeOut = Room.pingTimeOut || 0;
+        if (this.pingTimeOut <= 0) this.neverExpire = true;
 
-        if (this.pingTimeOut > 0 && !neverExpire) this.ping();
+        if (!neverExpire) this.ping();
 
         return this;
     }
@@ -77,7 +78,7 @@ class Room {
             __meta__: extra || {},
         };
 
-        this.host = clientId;
+        if (this.users.length == 0) this.host = clientId;
 
         this.users.push(data);
     }
@@ -127,10 +128,13 @@ class Room {
         for (const client in clientsWs) clientsWs[client].send(data);
     }
     
-    static sendGlobalPacket(data) {
-        Room.rooms.forEach(room => {
-            room.sendPacketToAll(data);
-        });
+    /**
+     * 
+     * @param {*} data The packet data to send to all users in all rooms
+     * @param {*} disregards Put any client UUID's to disregard from sending the packet to the client(s)
+     */
+    static sendGlobalPacket(data, disregards = []) {
+        Room.rooms.forEach(room => { room.sendPacketToAll(data, disregards); });
     }
 
     __getUsersWebSockets() {
