@@ -11,7 +11,7 @@ class Room {
 
     // Time in seconds to wait for a room to be empty before it is removed.
     static roomTimeoutTime = ServerSettings.roomTimeoutTime;
-    static pingTimeOut = ServerSettings.pingTimeOut;
+    static pingTimeOut = ServerSettings.roomPingTimeOut;
 
     static userCreationTimeOut = ServerSettings.userCreationTimeOut;
     static usersCreatedRooms = new Map();
@@ -39,7 +39,7 @@ class Room {
         this.users = [];
         this.__meta__ = extras || {};
         if (addToRooms) this.addToRooms();
-
+        
         this.pingTimeOut = Room.pingTimeOut || 0;
         if (this.pingTimeOut <= 0) this.neverExpire = true;
 
@@ -54,6 +54,7 @@ class Room {
         this.pingInterval = setInterval(() => {
             this.sendPacketToAll(new Packet("room.event", {room: this.name, event: "timout"}).toString());
             this.removeFromRooms();
+            clearInterval(this.pingInterval);
         }, this.pingTimeOut * 1000);
     }
 
