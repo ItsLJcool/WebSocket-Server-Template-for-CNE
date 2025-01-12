@@ -52,7 +52,7 @@ class Room {
         if (this.neverExpire) return;
         if (this.pingInterval != null) clearInterval(this.pingInterval);
         this.pingInterval = setInterval(() => {
-            this.sendPacketToAll(new Packet("room.timeout", { room: this.name }).toString());
+            this.sendPacketToAll(new Packet("room.timeout", { room: this.toJSON() }).toString());
             this.removeFromRooms();
             clearInterval(this.pingInterval);
         }, this.pingTimeOut * 1000);
@@ -137,6 +137,15 @@ class Room {
         Room.rooms.forEach(room => { room.sendPacketToAll(data, disregards); });
     }
 
+    toJSON() {
+        return {
+            name: this.name,
+            users: this.users,
+            host: this.host,
+            pingTimeout: this.pingTimeOut,
+        };
+    }
+
     __getUsersWebSockets() {
         var clientWs = [];
         webSocketServer.clients.forEach((ws) => {
@@ -178,7 +187,7 @@ function onMessage(ws, data) {
             }, Room.userCreationTimeOut * 1000);
             Room.usersCreatedRooms.set(ws.clientId, _cooldown);
             
-            var data = {room: room.name, users: room.users};
+            var data = {room: room.toJSON()};
             if (host) data.pingTimeout = room.pingTimeOut;
 
             ws.send(new Packet(clientEventName, data).toString());
@@ -187,8 +196,8 @@ function onMessage(ws, data) {
             var room = Room.getRoom(packet.data.name);
             if (!room) return ws.send(new Packet("room.error", {error: "Room does not exist"}).toString());
     
-            room.sendPacketToAll(new Packet("room.join", {room: room.name, user: ws.clientId}).toString());
-            ws.send(new Packet("room.join", {room: room.name}).toString());
+            room.sendPacketToAll(new Packet("room.join", {room: room.toJSON(), user: ws.clientId}).toString());
+            ws.send(new Packet("room.join", {room: room.toJSON()}).toString());
 
             room.addUser(ws.clientId);
             
@@ -202,8 +211,8 @@ function onMessage(ws, data) {
             if (room.host == ws.clientId) room.host = room.users[0].clientId;
             if (room.users.length == 0) room.removeFromRooms();
 
-            room.sendPacketToAll(new Packet("room.leave", {room: room.name, host: room.host, user: ws.clientId}).toString());
-            ws.send(new Packet("room.leave", {room: room.name}).toString());
+            room.sendPacketToAll(new Packet("room.leave", {room: room.toJSON(), user: ws.clientId}).toString());
+            ws.send(new Packet("room.leave", {room: room.toJSON()}).toString());
 
             console.log("User %s has left room %s", ws.clientId, room.name);
             break;
@@ -212,19 +221,11 @@ function onMessage(ws, data) {
             if (!room) return ws.send(new Packet("room.error", {error: "Room does not exist"}).toString());
             if (room.host != ws.clientId) return ws.send(new Packet("room.error", {error: "You are not the host of this room"}).toString());
             room.ping();
-            room.sendPacketToAll(new Packet("room.ping", {room: room.name, pingTimeOut: room.pingTimeOut, user: ws.clientId}).toString());
+            room.sendPacketToAll(new Packet("room.ping", {room: room.toJSON(), user: ws.clientId}).toString());
             break;
         case "room.getRooms":
             var rooms = [];
-            Room.rooms.forEach(room => {
-                var data = {
-                    name: room.name,
-                    users: room.users,
-                    host: room.host,
-                    pingTimeout: room.pingTimeOut,
-                };
-                rooms.push(data);
-            });
+            Room.rooms.forEach(room => { rooms.push(room.toJSON()); });
             ws.send(new Packet("room.getRooms", {rooms: rooms}).toString());
             break;
         case "room.checkRoom":
