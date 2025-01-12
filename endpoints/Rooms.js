@@ -225,6 +225,10 @@ function onMessage(ws, data) {
             });
             ws.send(new Packet("room.getRooms", {rooms: rooms}).toString());
             break;
+        case "room.checkRoom":
+            var roomExists = Room.rooms.has(packet.data.name);
+            ws.send(new Packet("room.checkRoom", {valid: !roomExists, name: packet.data.name}).toString());
+            break;
     }
 }
 
