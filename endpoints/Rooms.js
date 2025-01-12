@@ -169,7 +169,6 @@ function onMessage(ws, data) {
 
     switch (packet.name) {
         case "room.joinOrCreate":
-            
             if (Room.usersCreatedRooms.has(ws.clientId)) return ws.send(new Packet("room.cooldown").toString());
             var metadata = packet.data.roomData || {};
     
