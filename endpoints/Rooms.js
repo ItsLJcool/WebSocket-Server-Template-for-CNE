@@ -227,7 +227,7 @@ function onMessage(ws, data) {
             break;
         case "room.checkRoom":
             var roomExists = Room.rooms.has(packet.data.name);
-            ws.send(new Packet("room.checkRoom", {valid: !roomExists, name: packet.data.name}).toString());
+            ws.send(new Packet("room.checkRoom", {valid: !roomExists, roomName: packet.data.name}).toString());
             break;
     }
 }
