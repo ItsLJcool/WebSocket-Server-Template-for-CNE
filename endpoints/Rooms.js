@@ -191,11 +191,10 @@ function onMessage(ws, data) {
         case "room.join":
             var room = Room.getRoom(packet.data.name);
             if (!room) return ws.send(new Packet("room.error", {error: "Room does not exist"}).toString());
-    
-            room.sendPacketToAll(new Packet("room.join", {room: room.toJSON(), user: ws.clientId}).toString());
-            ws.send(new Packet("room.join", {room: room.toJSON()}).toString());
-
+            
             room.addUser(ws.clientId);
+    
+            room.sendPacketToAll(new Packet("room.join", {room: room.toJSON(), user: ws.clientId}).toString(), [ws.clientId]);
             
             console.log("\nUser %s has joined room %s", ws.clientId, room.name);
             break;
