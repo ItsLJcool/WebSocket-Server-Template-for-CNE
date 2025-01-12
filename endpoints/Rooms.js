@@ -178,19 +178,16 @@ function onMessage(ws, data) {
             
             var clientEventName = "room.create";
             if (Room.rooms.has(roomName)) clientEventName = "room.join";
+
             var room = new Room(roomName, metadata);
             room.addUser(ws.clientId);
-            var host = (room.host == ws.clientId);
     
             const _cooldown = setTimeout(() => {
                 Room.usersCreatedRooms.delete(ws.clientId);
             }, Room.userCreationTimeOut * 1000);
             Room.usersCreatedRooms.set(ws.clientId, _cooldown);
-            
-            var data = {room: room.toJSON()};
-            if (host) data.pingTimeout = room.pingTimeOut;
 
-            ws.send(new Packet(clientEventName, data).toString());
+            ws.send(new Packet(clientEventName, {room: room.toJSON()}).toString());
             break;
         case "room.join":
             var room = Room.getRoom(packet.data.name);
