@@ -167,6 +167,8 @@ function onMessage(ws, data) {
             var roomName = packet.data.name || 'Room #'+(Room.rooms.size+1);
             if (packet.data.__discord != null) roomName = packet.data.__discord.globalName + "'s Room";
             
+            var clientEventName = "room.create";
+            if (Room.rooms.has(roomName)) clientEventName = "room.join";
             var room = new Room(roomName, metadata);
             room.addUser(ws.clientId);
             var host = (room.host == ws.clientId);
@@ -179,7 +181,7 @@ function onMessage(ws, data) {
             var data = {room: room.name, users: room.users};
             if (host) data.pingTimeout = room.pingTimeOut;
 
-            ws.send(new Packet("room.create", data).toString());
+            ws.send(new Packet(clientEventName, data).toString());
             break;
         case "room.join":
             var room = Room.getRoom(packet.data.name);
