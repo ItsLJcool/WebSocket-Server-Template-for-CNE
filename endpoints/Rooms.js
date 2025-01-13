@@ -16,6 +16,8 @@ class Room {
     static userCreationTimeOut = ServerSettings.userCreationTimeOut;
     static usersCreatedRooms = new Map();
 
+    static hostPingTime = Math.floor(ServerSettings.roomPingTimeOut * 0.25);
+
     static rooms = new Map();
 
     static getRoom(name) {
@@ -33,6 +35,8 @@ class Room {
      * const room = new Room('My Room');
      */
     constructor(name, extras = {}, addToRooms = true, neverExpire = false) {
+        const _maxLength = 50;
+        if (name.length > _maxLength) name = name.substring(0, _maxLength);
         this.name = name;
         if (Room.rooms.has(name)) return Room.rooms.get(name);
 
@@ -87,6 +91,10 @@ class Room {
         this.users = this.users.filter(user => user.clientId != clientId); // supermaven is peak with this code it generated
     }
 
+    hasUser(clientId) {
+        return this.users.find(user => user.clientId == clientId);
+    }
+
     addToRooms() {
         Room.rooms.set(this.name, this);
         if (this.neverExpire) return;
@@ -104,6 +112,7 @@ class Room {
 
         if (this.neverExpire) return;
         clearInterval(this.roomTimeout);
+        this.sendPacketToAll(new Packet("room.close", { room: this.toJSON() }).toString());
     }
 
     /**
@@ -143,6 +152,7 @@ class Room {
             users: this.users,
             host: this.host,
             pingTimeout: this.pingTimeOut,
+            pingHostTime: Room.hostPingTime,
         };
     }
 
@@ -171,9 +181,9 @@ function onMessage(ws, data) {
         case "room.joinOrCreate":
             if (Room.usersCreatedRooms.has(ws.clientId)) return ws.send(new Packet("room.cooldown").toString());
             var metadata = packet.data.roomData || {};
-    
+            
             var roomName = packet.data.name || 'Room #'+(Room.rooms.size+1);
-            if (packet.data.__discord != null) roomName = packet.data.__discord.globalName + "'s Room";
+            if (packet.data.__discord != null && (packet.data.name == null)) roomName = packet.data.__discord.globalName + "'s Room";
             
             var clientEventName = "room.create";
             if (Room.rooms.has(roomName)) clientEventName = "room.join";
@@ -194,20 +204,19 @@ function onMessage(ws, data) {
             
             room.addUser(ws.clientId);
     
-            room.sendPacketToAll(new Packet("room.join", {room: room.toJSON(), user: ws.clientId}).toString(), [ws.clientId]);
+            room.sendPacketToAll(new Packet("room.join", {room: room.toJSON(), user: ws.clientId}).toString());
             
             console.log("\nUser %s has joined room %s", ws.clientId, room.name);
             break;
         case "room.leave":
             var room = Room.getRoom(packet.data.name);
             if (!room) return ws.send(new Packet("room.error", {error: "Room does not exist"}).toString());
-    
-            room.removeUser(ws.clientId);
-            if (room.host == ws.clientId) room.host = room.users[0].clientId;
-            if (room.users.length == 0) room.removeFromRooms();
 
             room.sendPacketToAll(new Packet("room.leave", {room: room.toJSON(), user: ws.clientId}).toString());
-            ws.send(new Packet("room.leave", {room: room.toJSON()}).toString());
+    
+            room.removeUser(ws.clientId);
+            if (room.users.length == 0) room.removeFromRooms();
+            else if (room.host == ws.clientId) room.host = room.users[0].clientId;
 
             console.log("User %s has left room %s", ws.clientId, room.name);
             break;
@@ -216,7 +225,7 @@ function onMessage(ws, data) {
             if (!room) return ws.send(new Packet("room.error", {error: "Room does not exist"}).toString());
             if (room.host != ws.clientId) return ws.send(new Packet("room.error", {error: "You are not the host of this room"}).toString());
             room.ping();
-            room.sendPacketToAll(new Packet("room.ping", {room: room.toJSON(), user: ws.clientId}).toString());
+            room.sendPacketToAll(new Packet("room.ping", {}).toString());
             break;
         case "room.getRooms":
             var rooms = [];
@@ -227,6 +236,31 @@ function onMessage(ws, data) {
             var roomExists = Room.rooms.has(packet.data.name);
             ws.send(new Packet("room.checkRoom", {valid: !roomExists, roomName: packet.data.name}).toString());
             break;
+    }
+
+    if (packet.name.startsWith("room.send.")) {
+        let sendTye = packet.name.split(".");
+        sendTye = sendTye[sendTye.length - 1];
+
+        var room = Room.getRoom(packet.data.room);
+        if (!room) return ws.send(new Packet("room.error", {error: "Room does not exist"}).toString());
+        if (!room.hasUser(ws.clientId)) return ws.send(new Packet("room.error", {error: "User is not in room"}).toString());
+        
+        var includeUser = packet.data.includeSelf || false;
+        var disregardSelf = (!includeUser) ? [ws.clientId] : [];
+        var packetToSend = new Packet("room.roomMessage", packet.data.data);
+
+        switch (sendTye) {
+            case "users":
+                room.sendPacketToAll(packetToSend.toString(), disregardSelf);
+                break;
+            case "specific":
+                room.sendPacketToUser(packetToSend.toString(), packet.data.user);
+                break;
+            case "broadcast":
+                room.sendGlobalPacket(packetToSend.toString(), disregardSelf);
+                break;
+        }
     }
 }
 
