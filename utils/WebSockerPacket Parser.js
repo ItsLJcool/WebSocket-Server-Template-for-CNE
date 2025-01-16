@@ -2,7 +2,7 @@ const { Unserializer } = require('./Unserializer');
 var Serializer = require("haxe-serializer")
 
 class PacketParser {
-	constructor(ws, packet) {
+	constructor(packet) {
         var params = packet.toString().split('=>');
         var name = params.shift().split("!HXP");
         if (name.length > 1)  {

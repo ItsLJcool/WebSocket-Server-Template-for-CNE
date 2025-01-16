@@ -7,7 +7,7 @@ const { ServerSettings } = require('../utils/ServerSettings');
 function login(ws, packet) {
     if (packet.name != "client.login") return;
 
-    if (ws.account.loggedIn) return ws.send(new Packet("client.error", {error: "Already logged in"}).toString());
+    if (ws.account.loggedIn || false) return ws.send(new Packet("client.error", {error: "Already logged in"}).toString());
 
     console.log("Client attempting to login. Data: %s", packet.data.__discord);
     switch (packet.data.method) {
@@ -40,7 +40,7 @@ module.exports = {
         ws.account = { loggedIn: false, };
     },
     message: (ws, data) => {
-        var packet = new PacketParser(ws, data);
+        var packet = new PacketParser(data);
         login(ws, packet);
         getUserAccount(ws, packet);
     },

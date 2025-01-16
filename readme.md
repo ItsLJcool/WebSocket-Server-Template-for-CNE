@@ -40,7 +40,7 @@ For `message`, if the client is using `WebSocketUtil` and the data is a `WebSock
 const { PacketParser } = require('../utils/WebSockerPacket Parser');
 module.exports = {
     message: (ws, data) => {
-        var packet = new PacketParser(ws, data);
+        var packet = new PacketParser(data);
 
         if (packet.name != "ping") return;
 

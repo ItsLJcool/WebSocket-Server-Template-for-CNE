@@ -175,7 +175,7 @@ function onClientDisconnected(ws) {
 }
 
 function onMessage(ws, data) {
-    var packet = new PacketParser(ws, data);
+    var packet = new PacketParser(data);
 
     switch (packet.name) {
         case "room.joinOrCreate":
