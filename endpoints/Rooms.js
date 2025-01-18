@@ -16,8 +16,6 @@ class Room {
     static userCreationTimeOut = ServerSettings.userCreationTimeOut;
     static usersCreatedRooms = new Map();
 
-    static hostPingTime = Math.floor(ServerSettings.roomPingTimeOut * 0.25);
-
     static rooms = new Map();
 
     static getRoom(name) {
@@ -48,6 +46,8 @@ class Room {
         if (this.pingTimeOut <= 0) this.neverExpire = true;
 
         if (!neverExpire) this.ping();
+
+        this.private = false;
 
         return this;
     }
@@ -152,7 +152,7 @@ class Room {
             users: this.users,
             host: this.host,
             pingTimeout: this.pingTimeOut,
-            pingHostTime: Room.hostPingTime,
+            private: this.private,
         };
     }
 
@@ -189,6 +189,8 @@ function onMessage(ws, data) {
             if (Room.rooms.has(roomName)) clientEventName = "room.join";
 
             var room = new Room(roomName, metadata);
+            if (room.private) return ws.send(new Packet("room.error", {error: "This room is private"}).toString());
+            if (clientEventName == "room.create") room.private = packet.data.private || false;
             room.addUser(ws.clientId);
     
             const _cooldown = setTimeout(() => {
@@ -201,6 +203,7 @@ function onMessage(ws, data) {
         case "room.join":
             var room = Room.getRoom(packet.data.name);
             if (!room) return ws.send(new Packet("room.error", {error: "Room does not exist"}).toString());
+            if (room.private) return ws.send(new Packet("room.error", {error: "This room is private"}).toString());
             
             room.addUser(ws.clientId);
     
@@ -229,7 +232,11 @@ function onMessage(ws, data) {
             break;
         case "room.getRooms":
             var rooms = [];
-            Room.rooms.forEach(room => { rooms.push(room.toJSON()); });
+            var showPrivate = packet.data.showPrivate || false;
+            Room.rooms.forEach(room => {
+                if (!showPrivate && room.private) return;
+                rooms.push(room.toJSON());
+            });
             ws.send(new Packet("room.getRooms", {rooms: rooms}).toString());
             break;
         case "room.checkRoom":
