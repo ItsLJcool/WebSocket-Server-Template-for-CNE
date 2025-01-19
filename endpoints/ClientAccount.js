@@ -14,9 +14,18 @@ function login(ws, packet) {
         case "discord":
             var discord = packet.data.__discord || null;
             if (discord == null) return ws.send(new Packet("client.error", {error: "Discord metadata not found."}).toString());
+
+            var clientAlreadyLoggedIn = false;
+            WebSocketServer.cleints.forEach(client => {
+                if (client.account.username != discord.username) return;
+                clientAlreadyLoggedIn = true;
+            });
+            if (clientAlreadyLoggedIn) return ws.send(new Packet("client.error", {error: "Already logged in"}).toString());
+
             ws.account.username = discord.username;
             ws.account.globalName = discord.globalName;
             ws.account.__meta = { nitroType: discord.premiumType, };
+            ws.account.loggedIn = true;
 
             break;
         case "email":
