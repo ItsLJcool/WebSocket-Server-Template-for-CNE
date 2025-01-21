@@ -16,7 +16,7 @@ function login(ws, packet) {
             if (discord == null) return ws.send(new Packet("client.error", {error: "Discord metadata not found."}).toString());
 
             var clientAlreadyLoggedIn = false;
-            WebSocketServer.cleints.forEach(client => {
+            webSocketServer.clients.forEach(client => {
                 if (client.account.username != discord.username) return;
                 clientAlreadyLoggedIn = true;
             });
