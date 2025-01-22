@@ -23,13 +23,11 @@ function joinOrCreate(ws, packet) {
     if (Room.rooms.has(roomName)) clientEventName = "room.join";
 
     var room = new Room(roomName, metadata);
-    console.log("attempting to create or join room %s", room);
     var isRoomFull = (room.users.length >= room.maxUsers && room.maxUsers != -1);
     if (isRoomFull) return ws.send(new Packet("room.error", {error: "This room is full"}).toString());
     if (room.private) return ws.send(new Packet("room.error", {error: "This room is private"}).toString());
     if (clientEventName == "room.create") room.private = packet.data.private || false;
     room.maxUsers = packet.data.userLimit || -1;
-    console.log("attempting to add user %s to room %s", ws.clientId, room.name);
     room.addUser(ws);
 
     const _cooldown = setTimeout(() => {

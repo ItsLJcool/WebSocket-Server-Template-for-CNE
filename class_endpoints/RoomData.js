@@ -154,6 +154,7 @@ class Room {
             host: this.host,
             pingTimeout: this.pingTimeOut,
             private: this.private,
+            __meta__: this.__meta__,
         };
     }
 
