@@ -83,13 +83,16 @@ class Room {
         
         var userClient = new RoomClient(ws.clientId, ws.account, extra);
 
-        if (this.users.length == 0) this.host = userClient;
+        if (this.users.length == 0) userClient.isHost = true;
 
         this.users.push(userClient);
     }
 
     removeUser(clientId) {
-        this.users = this.users.filter(user => user.clientId != clientId); // supermaven is peak with this code it generated
+        var user = this.users.find(user => user.clientId == clientId);
+        this.users.remove(user);
+        if (this.users.length == 0) return;
+        if (user.isHost) this.users[0].isHost = true;
     }
 
     hasUser(clientId) {
@@ -137,6 +140,10 @@ class Room {
         if (clientsWs.length == 0) return;
         for (const client in clientsWs) clientsWs[client].send(data);
     }
+
+    getHostUser() {
+        return this.users.filter(user => user.isHost)[0];
+    }
     
     /**
      * 
@@ -151,7 +158,6 @@ class Room {
         return {
             name: this.name,
             users: this.users,
-            host: this.host,
             pingTimeout: this.pingTimeOut,
             private: this.private,
             __meta__: this.__meta__,
@@ -160,7 +166,7 @@ class Room {
 
     toString() {
         if (this.users.length == 0) return this.name + " - Users: 0 - Host: None (private: " + this.private + " | neverExpire: " + this.neverExpire + ")";
-        return this.name + " - Users: " + this.users.length + " - Host: " + this.host.username + " (private: " + this.private + " | neverExpire: " + this.neverExpire + ")";
+        return this.name + " - Users: " + this.users.length + " - Host: " + getHostUser().username + " (private: " + this.private + " | neverExpire: " + this.neverExpire + ")";
     }
 
     __getUsersWebSockets() {
@@ -192,6 +198,7 @@ class RoomClient {
         this.clientId = clientId;
         this.__account = account || {};
         this.__meta__ = extra || {};
+        this.isHost = false;
 
         this.username = this.__account.username;
         this.globalName = this.__account.globalName;

@@ -60,7 +60,6 @@ function leave(ws, packet) {
 
     room.removeUser(ws.clientId);
     if (room.users.length == 0) room.removeFromRooms();
-    else if (room.host == ws.clientId) room.host = room.users[0].clientId;
 
     console.log("User %s has left room %s", ws.clientId, room.name);
 }
@@ -69,9 +68,14 @@ function ping(ws, packet) {
     if (packet.name != "room.ping") return;
     var room = Room.getRoom(packet.data.room);
     if (!room) return ws.send(new Packet("room.error", {error: "Room does not exist"}).toString());
-    if (room.host != ws.clientId) return ws.send(new Packet("room.error", {error: "You are not the host of this room"}).toString());
-    room.ping();
-    room.sendPacketToAll(new Packet("room.ping", {}).toString());
+    for (const user of room.users) {
+        if (user.clientId != ws.clientId) continue;
+        if (user.isHost) return ws.send(new Packet("room.error", {error: "You are the host of this room"}).toString());
+        room.ping();
+        room.sendPacketToAll(new Packet("room.ping", {}).toString());
+        return;
+    }
+    return ws.send(new Packet("room.error", {error: "Unkown error"}).toString());
 }
 
 function getRooms(ws, packet) {
