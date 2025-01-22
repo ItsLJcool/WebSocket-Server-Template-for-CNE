@@ -3,7 +3,7 @@
 
 const { ServerSettings } = require('./ServerSettings');
 
-const { Room } = require('../endpoints/Rooms');
+const { Room } = require('../class_endpoints/RoomData');
 const WebSocket = require('ws');
 
 const readline = require('readline');
