@@ -31,13 +31,26 @@ global.webSocketServer = wss;
 const endpoints = path.join(__dirname, 'endpoints');
 const endpointFiles = fs.readdirSync(endpoints).filter(file => file.endsWith('.js'));
 
+wss.clients.forEach(client => {
+});
 wss.on("connection", function (ws) {
+    ws.__pingInterval = setInterval(() => {
+        ws.ping();
+    }, 20_000);
+
     addHeartbeat(ws);
-    ws.on('ping', () => {
+
+    ws.on('pong', () => {
         clearTimeout(ws.heartbeatTimeout);
         addHeartbeat(ws);
     });
-    ws.on('close', () => clearTimeout(ws.heartbeatTimeout));
+    
+    ws.on('close', () => {
+        clearInterval(ws.__pingInterval);
+        clearTimeout(ws.heartbeatTimeout)
+    });
+
+
 
     for (const file of endpointFiles) {
         const filePath = path.join(endpoints, file);
@@ -93,7 +106,7 @@ function shutdownServer() {
 function addHeartbeat(ws) {
     ws.heartbeatTimeout = setTimeout(() => {
         ws.terminate();
-    }, 30_000);
+    }, 30_000 + 1_000);
 }
 
 // thanks ChatGPT
