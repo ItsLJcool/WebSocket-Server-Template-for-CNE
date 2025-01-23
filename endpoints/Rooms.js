@@ -22,6 +22,7 @@ function joinOrCreate(ws, packet) {
     
     var clientEventName = "room.create";
     if (Room.rooms.has(roomName)) clientEventName = "room.join";
+    console.log("Room Name: %s", roomName);
 
     var room = new Room(roomName, metadata);
     var isRoomFull = (room.users.length >= room.maxUsers && room.maxUsers != -1);

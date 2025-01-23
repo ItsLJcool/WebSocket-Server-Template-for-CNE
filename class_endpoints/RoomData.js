@@ -85,6 +85,8 @@ class Room {
 
         if (this.users.length == 0) userClient.isHost = true;
 
+        this.sendPacketToAll(new Packet("room.join", {room: this.toJSON(), user: userClient.toJSON()}).toString(), [ws.clientId]);
+
         this.users.push(userClient);
     }
 
