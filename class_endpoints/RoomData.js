@@ -84,10 +84,10 @@ class Room {
         var userClient = new RoomClient(ws.clientId, ws.account, extra);
 
         if (this.users.length == 0) userClient.isHost = true;
+        
+        this.users.push(userClient);
 
         this.sendPacketToAll(new Packet("room.join", {room: this.toJSON(), user: userClient.toJSON()}).toString(), [ws.clientId]);
-
-        this.users.push(userClient);
     }
 
     removeUser(clientId) {
