@@ -8,7 +8,7 @@ class ServerSettings {
     static serverPort = 5000;
 
     // Server Settings
-    static enableServerConsole = true;
+    static enableServerConsole = false;
     static noConsoleLog = false;
 
     // Room Endpoint Settings
