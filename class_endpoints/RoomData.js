@@ -67,13 +67,13 @@ class Room {
     addUser(ws, extra = {}) {
         if (this.private) return;
         if (this.users.length >= this.maxUsers && this.maxUsers != -1) return;
-        if (this.users.find(user => user.clientId == clientId)) return;
+        if (this.hasUser(ws.clientId)) return;
         
         // Chekcing if user is already in room, if so we don't add them to the new room.
         var isUserInRoom = false;
         Room.rooms.forEach(room => {
             for (const user of room.users) {
-                if (user.clientId != clientId) continue;
+                if (user.clientId != ws.clientId) continue;
 
                 isUserInRoom = true;
                 break;
@@ -89,10 +89,13 @@ class Room {
     }
 
     removeUser(clientId) {
-        var user = this.users.find(user => user.clientId == clientId);
-        this.users.remove(user);
-        if (this.users.length == 0) return;
+        var user = this.users.filter(user => user.clientId == clientId)[0];
+        if (user == null) return;
+        this.users = this.users.filter(filterUser => filterUser.clientId != clientId);
+        
+        if (this.users.length == 0) return this.sendPacketToAll(new Packet("room.leave", {room: this.toJSON(), user: user.toJSON()}).toString());;
         if (user.isHost) this.users[0].isHost = true;
+        this.sendPacketToAll(new Packet("room.leave", {room: this.toJSON(), user: user.toJSON()}).toString());
     }
 
     hasUser(clientId) {

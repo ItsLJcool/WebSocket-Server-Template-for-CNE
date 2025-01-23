@@ -6,6 +6,7 @@ const { ServerSettings } = require('../utils/ServerSettings');
 const { Room } = require('../class_endpoints/RoomData');
 
 function onClientDisconnected(ws) {
+    console.log("Attempt Client disconnection - %s", ws.clientId);
     Room.rooms.forEach(room => { room.removeUser(ws.clientId); });
 }
 
@@ -66,11 +67,13 @@ function leave(ws, packet) {
 
 function ping(ws, packet) {
     if (packet.name != "room.ping") return;
+    console.log("Attempting to ping room %s", packet.data.room);
     var room = Room.getRoom(packet.data.room);
     if (!room) return ws.send(new Packet("room.error", {error: "Room does not exist"}).toString());
     for (const user of room.users) {
         if (user.clientId != ws.clientId) continue;
-        if (user.isHost) return ws.send(new Packet("room.error", {error: "You are the host of this room"}).toString());
+        if (!user.isHost) return ws.send(new Packet("room.error", {error: "You are the host of this room"}).toString());
+        console.log("User %s has pinged room %s", ws.clientId, room.name);
         room.ping();
         room.sendPacketToAll(new Packet("room.ping", {}).toString());
         return;
@@ -125,6 +128,8 @@ function sendMessage(ws, packet) {
 function onMessage(ws, data) {
     if (ws.account == null || ws.account.loggedIn == false) return ws.send(new Packet("room.error", {error: "You are not logged in!"}).toString());
     var packet = new PacketParser(data);
+
+    console.log("Attempting to process packet %s", packet.name);
 
     joinOrCreate(ws, packet);
     join(ws, packet);
