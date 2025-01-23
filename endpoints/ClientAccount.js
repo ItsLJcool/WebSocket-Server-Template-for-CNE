@@ -20,7 +20,11 @@ function login(ws, packet) {
                 if (client.account.username != discord.username) return;
                 clientAlreadyLoggedIn = true;
             });
-            if (clientAlreadyLoggedIn) return ws.send(new Packet("client.error", {error: "Already logged in"}).toString());
+            if (clientAlreadyLoggedIn) {
+                ws.send(new Packet("client.error", {error: "Already logged in"}).toString());
+                ws.close();
+                return;
+            }
 
             ws.account.username = discord.username;
             ws.account.globalName = discord.globalName;

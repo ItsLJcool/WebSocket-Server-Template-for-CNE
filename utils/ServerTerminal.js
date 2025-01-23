@@ -29,7 +29,7 @@ class ServerTerminal {
             const _clients = [];
             webSocketServer.clients.forEach((ws) => {
                 if (ws.readyState !== WebSocket.OPEN) return;
-                _clients.push(ws.clientId);
+                _clients.push({account: ws.account, clientId: ws.clientId});
             });
             console.log(_clients);
         },
