@@ -32,10 +32,10 @@ const endpoints = path.join(__dirname, 'endpoints');
 const endpointFiles = fs.readdirSync(endpoints).filter(file => file.endsWith('.js'));
 
 wss.on("connection", function (ws) {
-    addHeartbeat();
+    addHeartbeat(ws);
     ws.on('ping', () => {
         clearTimeout(ws.heartbeatTimeout);
-        addHeartbeat();
+        addHeartbeat(ws);
     });
     ws.on('close', () => clearTimeout(ws.heartbeatTimeout));
 
