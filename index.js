@@ -31,12 +31,22 @@ global.webSocketServer = wss;
 const endpoints = path.join(__dirname, 'endpoints');
 const endpointFiles = fs.readdirSync(endpoints).filter(file => file.endsWith('.js'));
 wss.on("connection", function (ws) {
+    ws.isAlive = true;
+    ws.on('pong', () => { ws.isAlive = true; });
+    const heartbeatForClient = setInterval(function ping() {
+        wss.clients.forEach(function each(ws_client) {
+            if (ws_client.isAlive === false) return ws_client.terminate();
+    
+            ws_client.isAlive = false;
+            ws_client.ping();
+        });
+    }, 1_000);
 
     for (const file of endpointFiles) {
         const filePath = path.join(endpoints, file);
         const endpoint = require(filePath);
     
-        const fieldsToCheck = ['message', 'close', 'error'];
+        const fieldsToCheck = ['message', 'close', 'error', "pong"];
         for (const field of fieldsToCheck) {
             if (!(field in endpoint)) continue;
             ws.on(field, function() {
@@ -56,6 +66,8 @@ wss.on("connection", function (ws) {
             }
         }
     }
+    
+    ws.on('close', () => clearInterval(heartbeatForClient));
 
     if (Debugger) {
         // ws.on('message', (data) => { debug_message(ws, data); });
