@@ -127,8 +127,6 @@ function onMessage(ws, data) {
     if (ws.account == null || ws.account.loggedIn == false) return ws.send(new Packet("room.error", {error: "You are not logged in!"}).toString());
     var packet = new PacketParser(data);
 
-    console.log("Attempting to process packet %s", packet.name);
-
     joinOrCreate(ws, packet);
     join(ws, packet);
     leave(ws, packet);
