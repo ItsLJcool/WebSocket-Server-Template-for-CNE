@@ -30,17 +30,14 @@ global.webSocketServer = wss;
 
 const endpoints = path.join(__dirname, 'endpoints');
 const endpointFiles = fs.readdirSync(endpoints).filter(file => file.endsWith('.js'));
+
 wss.on("connection", function (ws) {
-    ws.isAlive = true;
-    ws.on('pong', () => { ws.isAlive = true; });
-    const heartbeatForClient = setInterval(function ping() {
-        wss.clients.forEach(function each(ws_client) {
-            if (ws_client.isAlive === false) return ws_client.terminate();
-    
-            ws_client.isAlive = false;
-            ws_client.ping();
-        });
-    }, 1_000);
+    addHeartbeat();
+    ws.on('ping', () => {
+        clearTimeout(ws.heartbeatTimeout);
+        addHeartbeat();
+    });
+    ws.on('close', () => clearTimeout(ws.heartbeatTimeout));
 
     for (const file of endpointFiles) {
         const filePath = path.join(endpoints, file);
@@ -66,8 +63,6 @@ wss.on("connection", function (ws) {
             }
         }
     }
-    
-    ws.on('close', () => clearInterval(heartbeatForClient));
 
     if (Debugger) {
         // ws.on('message', (data) => { debug_message(ws, data); });
@@ -93,6 +88,12 @@ function shutdownServer() {
         console.log('WebSocket server closed');
         process.exit(0); // Exit the process
     });
+}
+
+function addHeartbeat(ws) {
+    ws.heartbeatTimeout = setTimeout(() => {
+        ws.terminate();
+    }, 30_000);
 }
 
 // thanks ChatGPT
