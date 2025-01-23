@@ -67,13 +67,11 @@ function leave(ws, packet) {
 
 function ping(ws, packet) {
     if (packet.name != "room.ping") return;
-    console.log("Attempting to ping room %s", packet.data.room);
     var room = Room.getRoom(packet.data.room);
     if (!room) return ws.send(new Packet("room.error", {error: "Room does not exist"}).toString());
     for (const user of room.users) {
         if (user.clientId != ws.clientId) continue;
         if (!user.isHost) return ws.send(new Packet("room.error", {error: "You are the host of this room"}).toString());
-        console.log("User %s has pinged room %s", ws.clientId, room.name);
         room.ping();
         room.sendPacketToAll(new Packet("room.ping", {}).toString());
         return;
