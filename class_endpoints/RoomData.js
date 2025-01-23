@@ -86,6 +86,7 @@ class Room {
         if (this.users.length == 0) userClient.isHost = true;
         
         this.users.push(userClient);
+        console.log("\nUser %s has joined room %s", ws.clientId, this.name);
 
         this.sendPacketToAll(new Packet("room.join", {room: this.toJSON(), user: userClient.toJSON()}).toString(), [ws.clientId]);
     }
@@ -95,8 +96,11 @@ class Room {
         if (user == null) return;
         this.users = this.users.filter(filterUser => filterUser.clientId != clientId);
         
-        if (this.users.length == 0) return this.sendPacketToAll(new Packet("room.leave", {room: this.toJSON(), user: user.toJSON()}).toString());;
+        if (this.users.length != 0) return this.sendPacketToAll(new Packet("room.leave", {room: this.toJSON(), user: user.toJSON()}).toString());
+
         if (user.isHost) this.users[0].isHost = true;
+        
+        console.log("User %s has left room %s", clientId, this.name);
         this.sendPacketToAll(new Packet("room.leave", {room: this.toJSON(), user: user.toJSON()}).toString());
     }
 

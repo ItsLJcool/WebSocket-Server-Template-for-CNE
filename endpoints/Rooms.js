@@ -45,12 +45,7 @@ function join(ws, packet) {
     var room = Room.getRoom(packet.data.name);
     if (!room) return ws.send(new Packet("room.error", {error: "Room does not exist"}).toString());
     if (room.private) return ws.send(new Packet("room.error", {error: "This room is private"}).toString());
-    
     room.addUser(ws);
-
-    room.sendPacketToAll(new Packet("room.join", {room: room.toJSON(), user: ws.clientId}).toString());
-    
-    console.log("\nUser %s has joined room %s", ws.clientId, room.name);
 }
 
 function leave(ws, packet) {
@@ -58,12 +53,7 @@ function leave(ws, packet) {
     var room = Room.getRoom(packet.data.name);
     if (!room) return ws.send(new Packet("room.error", {error: "Room does not exist"}).toString());
 
-    room.sendPacketToAll(new Packet("room.leave", {room: room.toJSON(), user: ws.clientId}).toString());
-
     room.removeUser(ws.clientId);
-    if (room.users.length == 0) room.removeFromRooms();
-
-    console.log("User %s has left room %s", ws.clientId, room.name);
 }
 
 function ping(ws, packet) {

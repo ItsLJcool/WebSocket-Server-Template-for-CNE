@@ -22,7 +22,9 @@ class ServerTerminal {
     
     static commands = {
         help: listCommands,
-        cls: () => { console.clear(); },
+        cls: () => {
+            console.clear();
+        },
 
         "all rooms": () => { console.log(Room.rooms); },
         clients: () => {
@@ -43,6 +45,12 @@ class ServerTerminal {
 // Set up the readline interface
 var rl = null;
 
+const originalClear = console.clear;
+console.clear = function () {
+    process.stdout.write('\x1Bc'); // Sends an ANSI escape sequence to clear the terminal
+    originalClear(); // Clear visible output
+};
+
 const originalLog = console.log;
 console.log = function (...args) {
     if (ServerTerminal.preventConsoleLog) return;
@@ -53,12 +61,14 @@ console.log = function (...args) {
     if (ServerTerminal.serverConsole) rl.prompt(true);
 };
 
+let preventClose = false;
 function setupServerTerminal() {
     rl = readline.createInterface({
         input: process.stdin,
         output: process.stdout,
         prompt: '>>> ',
     });
+    rl.input.setRawMode(true);
 
     rl.on('line', (line) => {
         const input = line.trim();
@@ -71,6 +81,7 @@ function setupServerTerminal() {
         console.log('');
         rl.prompt();
     }).on('close', () => {
+        if (preventClose) return;
         ServerTerminal.onShutdown();
     });
     
