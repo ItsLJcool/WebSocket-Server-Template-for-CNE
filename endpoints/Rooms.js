@@ -109,7 +109,7 @@ function update_clientMetaData(ws, packet) {
         if (!packet.data.meta.hasOwnProperty(key)) continue;
         client[0].addMetaData(key, packet.data.meta[key]);
     }
-    room.sendPacketToAll(new Packet("room.update.client.meta", {room: client[0].__meta__}).toString());
+    room.sendPacketToAll(new Packet("room.update.client.meta", {room: room.toJSON()}).toString(), [ws.clientId]);
     ws.send(new Packet("room.return.room", {room: room.toJSON()}).toString());
 }
 
