@@ -126,10 +126,6 @@ function sendMessage(ws, packet) {
     var disregardSelf = (!includeUser) ? [ws.clientId] : [];
     var packetToSend = new Packet("room.message", packet.data.data);
 
-    console.log("includeUser: %s", includeUser);
-    console.log("disregardSelf: %s", disregardSelf);
-    console.log("packetToSend: %s", packetToSend.toString());
-
     switch (sendTye) {
         case "users":
             room.sendPacketToAll(packetToSend.toString(), disregardSelf);
