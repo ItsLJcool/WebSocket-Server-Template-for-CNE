@@ -125,7 +125,7 @@ function sendMessage(ws, packet) {
     
     var includeUser = packet.data.includeSelf || false;
     var disregardSelf = (!includeUser) ? [ws.clientId] : [];
-    var packetToSend = new Packet("room.roomMessage", packet.data.data);
+    var packetToSend = new Packet("room.message", packet.data.data);
 
     switch (sendTye) {
         case "users":
