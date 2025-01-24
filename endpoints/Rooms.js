@@ -44,9 +44,7 @@ function joinOrCreate(ws, packet) {
 }
 
 function join(ws, packet) {
-    console.log("Joining room %s", packet);
     if (packet.name != "room.join") return;
-    console.log("EVENT NAME IS THE FOLLOWING: %s", packet.name);
     var room = Room.getRoom(packet.data.name);
     if (!room) return ws.send(new Packet("room.error", {error: "Room does not exist"}).toString());
     if (room.private) return ws.send(new Packet("room.error", {error: "This room is private"}).toString());

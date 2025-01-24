@@ -88,7 +88,7 @@ class Room {
         this.users.push(userClient);
         console.log("\nUser %s has joined room %s", ws.clientId, this.name);
 
-        this.sendPacketToAll(new Packet("room.join", {room: this.toJSON(), user: userClient.toJSON()}).toString(), [ws.clientId]);
+        this.sendPacketToAll(new Packet("room.join", {room: this.toJSON(), user: userClient.toJSON()}).toString());
     }
 
     removeUser(clientId) {
