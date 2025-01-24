@@ -20,28 +20,33 @@ function joinOrCreate(ws, packet) {
     var roomName = packet.data.name || 'Room #'+(Room.rooms.size+1);
     if (packet.data.__discord != null && (packet.data.name == null)) roomName = packet.data.__discord.globalName + "'s Room";
     
-    var clientEventName = "room.create";
-    if (Room.rooms.has(roomName)) clientEventName = "room.join";
+    var joiningRoom = Room.rooms.has(roomName);
     console.log("Room Name: %s", roomName);
 
     var room = new Room(roomName, metadata);
     var isRoomFull = (room.users.length >= room.maxUsers && room.maxUsers != -1);
     if (isRoomFull) return ws.send(new Packet("room.error", {error: "This room is full"}).toString());
     if (room.private) return ws.send(new Packet("room.error", {error: "This room is private"}).toString());
-    if (clientEventName == "room.create") room.private = packet.data.private || false;
-    room.maxUsers = packet.data.userLimit || -1;
+    if (!joiningRoom) {
+        room.private = packet.data.private || false;
+        room.maxUsers = packet.data.userLimit || -1;
+    }
     room.addUser(ws);
+
+    if (joiningRoom) return;
 
     const _cooldown = setTimeout(() => {
         Room.usersCreatedRooms.delete(ws.clientId);
     }, Room.userCreationTimeOut * 1000);
     Room.usersCreatedRooms.set(ws.clientId, _cooldown);
 
-    ws.send(new Packet(clientEventName, {room: room.toJSON()}).toString());
+    ws.send(new Packet("room.create", {room: room.toJSON()}).toString());
 }
 
 function join(ws, packet) {
+    console.log("Joining room %s", packet);
     if (packet.name != "room.join") return;
+    console.log("EVENT NAME IS THE FOLLOWING: %s", packet.name);
     var room = Room.getRoom(packet.data.name);
     if (!room) return ws.send(new Packet("room.error", {error: "Room does not exist"}).toString());
     if (room.private) return ws.send(new Packet("room.error", {error: "This room is private"}).toString());
