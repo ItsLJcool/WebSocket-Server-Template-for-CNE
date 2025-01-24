@@ -96,8 +96,9 @@ class Room {
         if (user == null) return;
 
         console.log("User %s has left room %s", clientId, this.name);
-        this.sendPacketToAll(new Packet("room.leave", {room: this.toJSON(), user: user.toJSON()}).toString());
         this.users = this.users.filter(filterUser => filterUser.clientId != clientId);
+        this.sendPacketToAll(new Packet("room.leave", {room: this.toJSON(), user: user.toJSON()}).toString());
+        console.log("Sent leave packet to all users in room %s", this.name);
         if (this.users.length == 0) return this.removeFromRooms();
         if (user.isHost) this.users[0].isHost = true;
     }
