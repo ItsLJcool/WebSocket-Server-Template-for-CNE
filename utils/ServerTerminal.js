@@ -26,14 +26,14 @@ class ServerTerminal {
             console.clear();
         },
 
-        "all rooms": () => { console.log("rooms: %s", Room.rooms); },
+        "all rooms": () => { console.log(Room.rooms); },
         clients: () => {
             const _clients = [];
             webSocketServer.clients.forEach((ws) => {
                 if (ws.readyState !== WebSocket.OPEN) return;
                 _clients.push({account: ws.account, clientId: ws.clientId});
             });
-            console.log("Cleints: %s", _clients);
+            console.log(_clients);
         },
 
         exit: ServerTerminal.onShutdown,
